@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-web
+  namespace: secure-lab
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: secure-web
+
+  template:
+    metadata:
+      labels:
+        app: secure-web
+
+    spec:
+
+      # Run the pod as an unprivileged user.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+
+        # Use the runtime's default seccomp policy.
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: web
+          image: busybox:1.36
+
+          command:
+            - /bin/sh
+            - -c
+
+          args:
+            - |
+              echo "Secure AKS Application" > /tmp/index.html
+              httpd -f -p 8080 -h /tmp
+
+          ports:
+            - containerPort: 8080
+
+          securityContext:
+
+            # Prevent becoming root through setuid/SUID.
+            allowPrivilegeEscalation: false
+
+            # Remove Linux capabilities.
+            capabilities:
+              drop:
+                - ALL
+
+            # Root filesystem cannot be modified.
+            readOnlyRootFilesystem: true
+
+          volumeMounts:
+            - name: temp
+              mountPath: /tmp
+
+      volumes:
+        - name: temp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: secure-web
+  namespace: secure-lab
+
+spec:
+  selector:
+    app: secure-web
+
+  ports:
+    - port: 8080
+      targetPort: 8080

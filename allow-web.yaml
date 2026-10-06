@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: allow-trusted-to-web
+  namespace: secure-lab
+
+spec:
+
+  # Policy applies to secure-web pods.
+  podSelector:
+    matchLabels:
+      app: secure-web
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+    - from:
+
+        # Only pods with this label can communicate.
+        - podSelector:
+            matchLabels:
+              access: trusted
+
+      ports:
+        - protocol: TCP
+          port: 8080

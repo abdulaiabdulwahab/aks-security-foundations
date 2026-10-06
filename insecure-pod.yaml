@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: insecure-pod
+  namespace: secure-lab
+spec:
+  containers:
+    - name: insecure
+      image: busybox:1.36
+
+      # Deliberately insecure.
+      securityContext:
+        privileged: true
+
+      command:
+        - sleep
+        - "3600"
